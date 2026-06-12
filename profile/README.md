@@ -1,4 +1,4 @@
-# Infra Heroes
+# InfraHeroes UG (haftungsbeschränkt) i. G.
 
 ## Cloud-Hosting Plattform für den Mittelstand
 
