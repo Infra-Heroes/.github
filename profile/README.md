@@ -1,145 +1,155 @@
 # InfraHeroes UG (haftungsbeschränkt) i.G. 🦸
 
-> **Container in. MicroVM out. HTTPS up.**
-> No Kubernetes. No DevOps team. No vendor lock-in.
+> *You write the app. We handle the rest.*
 
-We're building **NanoStack** — a German-made PaaS that boots your workloads as isolated
-[Firecracker](https://firecracker-microvm.github.io/) MicroVMs instead of shared-kernel containers.
-The simplicity of Fly.io or Render, with hardware-level tenant isolation, running on infrastructure you control.
+**NanoStack** is a German-made cloud platform that runs your containers as isolated
+Firecracker MicroVMs — not just namespaces and cgroups. Think Fly.io or Render,
+but with hardware-level tenant isolation and no US data leaving the country.
 
 ---
 
-## From zero to deployed in 60 seconds
+## Ship in 60 seconds
 
 ```bash
-# 1. Install the CLI
-curl -sSL https://infra-heroes.de/install.sh | bash
+curl -sSL https://infra-heroes.de/install.sh | bash   # install heroctl
 
-# 2. Log in & deploy
 heroctl login
 heroctl deploy --project my-project
-# → https://my-api.my-project.infra-heroes.de ✓
+# → https://my-api.my-project.infra-heroes.de  ✓
 ```
 
-That's it. TLS, networking, secrets injection, health checks — all handled.
+TLS, networking, health checks, secrets — handled. You didn't touch a config file for any of it.
 
 ---
 
-## Why MicroVMs?
+## Why not just use containers?
 
-Containers share a kernel. One exploit, one misconfigured process, one rogue dependency can affect every tenant on the host. Firecracker MicroVMs give every workload its own kernel, its own network stack, and its own trust boundary — with cold starts under **20 ms**.
+Containers share a kernel. That's the problem.
+
+One compromised dependency, one misconfigured process — and every tenant on that host is a potential victim. We don't think that's a good trade-off, even at small scale.
+
+Every workload on NanoStack runs in its **own Firecracker MicroVM** — a separate kernel, a separate network stack, a separate trust boundary. And because Firecracker was built for exactly this, cold starts are **under 20 ms**. Scale-to-zero actually makes sense.
 
 ```
-Developer pushes image
-        │
-        ▼
-  heroctl deploy
-        │
-        ▼
- Nomad schedules task
-        │
-        ▼
- Compute Agent boots Firecracker MicroVM   ← isolated kernel
-        │                                  ← isolated VXLAN namespace
-        ▼                                  ← secrets via Vault MMDS
- App is live at your subdomain
+ your image
+     │
+     ▼  heroctl deploy
+     │
+     ▼  Nomad schedules the task
+     │
+     ▼  Compute Agent boots a Firecracker MicroVM
+     │       ↳ own kernel
+     │       ↳ own VXLAN network namespace
+     │       ↳ secrets injected via Vault MMDS
+     ▼
+  live HTTPS endpoint
 ```
 
 ---
 
-## Platform features
+## What you get
 
-| Feature | What it means for you |
-|---------|----------------------|
-| ⚡ **< 20 ms cold starts** | Scale-to-zero is actually usable in production |
-| 🔒 **Hardware-isolated VMs** | Separate kernel per tenant — not just cgroups |
-| 🌐 **EVPN/VXLAN networking** | Full L2 tenant isolation across any number of worker nodes |
-| 🔑 **Vault-backed secrets** | Injected at boot via MMDS, never stored in env files or images |
-| 📊 **Built-in observability** | Mimir + Loki + Tempo + Grafana, pre-wired for every deployment |
-| 🛍️ **App Store** | One-click Postgres, Redis, monitoring stacks |
-| 🇩🇪 **Made in Germany** | DSGVO-compliant, data stays in German data centres |
+| | |
+|---|---|
+| ⚡ **< 20 ms cold starts** | Scale-to-zero without the latency penalty |
+| 🔒 **Isolated kernels** | Hardware-level separation between every tenant |
+| 🌐 **BGP EVPN / VXLAN overlay** | Private L2 network per project, across any number of nodes |
+| 🔑 **Zero-touch secrets** | Vault injects at boot — never in your image, never in `.env` |
+| 📊 **Full observability** | Metrics, logs, traces — Mimir + Loki + Tempo + Grafana, pre-wired |
+| 🛍️ **App Store** | One-click Postgres, Redis, and monitoring stacks |
+| 🇩🇪 **German infrastructure** | DSGVO-compliant, data stays in Germany |
 
 ---
 
-## heroctl — the full CLI
+## heroctl
 
-### Account & projects
+Everything you need, nothing you don't.
+
+### Get started
 
 ```bash
-heroctl signup                                     # create an account
-heroctl login                                      # authenticate
-heroctl orgs                                       # list your organisations
-
-heroctl projects list                              # list projects
-heroctl projects create my-project                 # create a project
-heroctl projects delete my-project                 # delete a project
+heroctl signup                        # create your account
+heroctl login                         # authenticate
+heroctl orgs                          # list your organisations
 ```
 
-### Deploy & manage workloads
+### Projects
 
 ```bash
-heroctl validate                                   # validate hero.toml before deploying
-heroctl deploy --project my-project                # build & deploy from current directory
+heroctl projects list                 # list all projects
+heroctl projects create my-project    # create a new project
+heroctl projects delete my-project    # delete a project
+```
 
-heroctl deployments list --project my-project      # list all deployments
-heroctl deployments get my-api --project my-project # inspect a deployment
-heroctl deployments start   my-api --project …     # start a stopped deployment
-heroctl deployments stop    my-api --project …     # stop without deleting
-heroctl deployments restart my-api --project …     # rolling restart
-heroctl deployments update  my-api --cpu 2 --memory 1024 --project … # scale vertically
-heroctl deployments delete  my-api --project …     # remove deployment
+### Deploy
+
+```bash
+heroctl validate                      # check hero.toml before deploying
+heroctl deploy --project my-project   # build & deploy from the current directory
+```
+
+### Manage running workloads
+
+```bash
+heroctl deployments list     --project my-project
+heroctl deployments get      my-api  --project my-project
+heroctl deployments start    my-api  --project my-project
+heroctl deployments stop     my-api  --project my-project
+heroctl deployments restart  my-api  --project my-project
+heroctl deployments update   my-api  --cpu 2 --memory 1024 --project my-project
+heroctl deployments delete   my-api  --project my-project
 ```
 
 ### Logs
 
 ```bash
-heroctl logs my-api --project my-project           # snapshot of recent logs
-heroctl logs my-api --project my-project -f        # stream live (follow mode)
+heroctl logs my-api --project my-project      # recent log snapshot
+heroctl logs my-api --project my-project -f   # live stream
 ```
 
 ### Secrets
 
 ```bash
-heroctl secrets set    DB_PASSWORD --project …     # set a secret (read from stdin)
-heroctl secrets list   --project my-project        # list secret keys (values hidden)
-heroctl secrets delete DB_PASSWORD --project …     # delete a secret
+heroctl secrets set    DB_PASSWORD --project my-project   # prompted — never in shell history
+heroctl secrets list               --project my-project   # keys only, values never shown
+heroctl secrets delete DB_PASSWORD --project my-project
 ```
 
 ### Persistent volumes
 
 ```bash
-heroctl volumes create my-data --size 20 --project …  # create a 20 GB volume
-heroctl volumes list   --project my-project             # list volumes
-heroctl volumes destroy my-data --project …            # permanently destroy a volume
+heroctl volumes create my-data --size 20 --project my-project   # 20 GB Ceph block volume
+heroctl volumes list                     --project my-project
+heroctl volumes destroy my-data          --project my-project
 ```
 
-### Team management
+### Team & access
 
 ```bash
-heroctl members invite   user@example.com --org my-org  # invite a team member
-heroctl members list     --org my-org                    # list members
-heroctl members set-role <id> admin --org my-org         # promote to admin
-heroctl members remove   <id> --org my-org               # remove a member
+heroctl members invite   user@example.com  --org my-org
+heroctl members list                       --org my-org
+heroctl members set-role <id> admin        --org my-org
+heroctl members remove   <id>              --org my-org
 
-heroctl members invitations list   --org my-org          # pending invitations
-heroctl members invitations revoke <id> --org my-org     # cancel an invite
-heroctl accept-invite <token>                            # accept an invitation
+heroctl members invitations list           --org my-org
+heroctl members invitations revoke <id>    --org my-org
+heroctl accept-invite <token>
 ```
 
 ### CI/CD tokens
 
 ```bash
-heroctl tokens create --org my-org   # create a scoped API token for CI runners
-heroctl tokens list   --org my-org   # list active tokens
+heroctl tokens create   --org my-org   # scoped token for your pipeline
+heroctl tokens list     --org my-org
 heroctl tokens delete <id> --org my-org
 ```
 
 ---
 
-## The full config is one file
+## One config file, zero surprises
 
 ```toml
-# hero.toml
+# hero.toml  —  lives next to your Dockerfile
 [app]
 name           = "my-api"
 custom_domains = ["api.example.com"]
@@ -157,22 +167,15 @@ scale_to_zero = false
 NODE_ENV = "production"
 
 [labels]
-"metrics.scrape" = "true"
+"metrics.scrape" = "true"   # auto-discovered by Prometheus
 
 [[volumes]]
 name  = "uploads"
 mount = "/var/lib/uploads"
 ```
 
-Secrets stay out of the file — set them with `heroctl secrets set`.
+Sensitive values stay out entirely — `heroctl secrets set KEY` injects them at boot.
 
 ---
 
-## Status
-
-🔧 **MVP in active development** — closed beta targeting Q2 2026
-
-Built by [Dominik Ludwig](https://github.com/dominikludwig1995) and [Sascha Jullmann](https://github.com/SaschaJullmann)
-in Frankfurt, Germany.
-
-**→ [infra-heroes.de](https://infra-heroes.de)**
+🔧 **MVP in active development** · closed beta targeting Q2 2026 · [infra-heroes.de](https://infra-heroes.de)
