@@ -1,73 +1,103 @@
-# InfraHeroes
+# InfraHeroes 🦸
 
-**We build NanoStack — a self-hosted PaaS that runs your containers as isolated Firecracker MicroVMs.**
+> **Container in. MicroVM out. HTTPS up.**
+> No Kubernetes. No DevOps team. No vendor lock-in.
 
-Push a Docker image. Run `heroctl deploy`. Get a live HTTPS URL. No Kubernetes. No DevOps team required.
-
----
-
-## What we're building
-
-| | |
-|---|---|
-| **Hardware-isolated workloads** | Every deployment runs in its own Firecracker MicroVM with a separate kernel — not just cgroups |
-| **< 20 ms cold starts** | MicroVM snapshots make scale-to-zero practical for real production workloads |
-| **Tenant-level network isolation** | Per-tenant VXLAN overlays via BGP EVPN — no shared L2 broadcast domain between customers |
-| **Zero-config secrets** | HashiCorp Vault injects secrets at boot via the Firecracker MMDS — no secrets in env files |
-| **Full observability** | Mimir + Loki + Tempo + Grafana, pre-wired, available in one click from the App Store |
-| **Made in Germany** | DSGVO-compliant by design, running in German data centres |
+We're building **NanoStack** — a German-made PaaS that boots your workloads as isolated
+[Firecracker](https://firecracker-microvm.github.io/) MicroVMs instead of shared-kernel containers.
+The simplicity of Fly.io or Render, with hardware-level tenant isolation, running on infrastructure you control.
 
 ---
 
-## Repositories
-
-| Repo | Description |
-|------|-------------|
-| [heroctl](https://github.com/Infra-Heroes/heroctl) | CLI — deploy, scale, stream logs, manage secrets and volumes |
-| [hero-api](https://github.com/Infra-Heroes/hero-api) | Control plane API — projects, billing, auth |
-| [hero-compute-agent](https://github.com/Infra-Heroes/hero-compute-agent) | Worker daemon — manages Firecracker MicroVM lifecycles via `/dev/kvm` |
-| [hero-driver](https://github.com/Infra-Heroes/hero-driver) | Nomad task driver plugin — bridges scheduler to compute agent |
-| [hero-gateway-agent](https://github.com/Infra-Heroes/hero-gateway-agent) | Jump node agent — configures VXLAN bridges and BGP EVPN routes |
-| [hero-public](https://github.com/Infra-Heroes/hero-public) | Architecture docs, concepts, roadmap, and pitch materials |
-| [hero-app-store](https://github.com/Infra-Heroes/hero-app-store) | One-click managed services (databases, monitoring stack) |
-
----
-
-## The developer experience
+## From zero to deployed in 60 seconds
 
 ```bash
-# Install
-curl -sL https://infra-heroes.de/install.sh | bash
+# 1. Install the CLI
+curl -sSL https://infra-heroes.de/install.sh | bash
 
-# Deploy
+# 2. Log in & deploy
+heroctl login
 heroctl deploy --project my-project
-
-# Stream logs
-heroctl logs my-api --project my-project -f
-
-# Inject a secret
-heroctl secrets set DB_PASSWORD --project my-project
+# → https://my-api.my-project.infra-heroes.de ✓
 ```
 
-Your `hero.toml` is the entire config surface:
+That's it. TLS, networking, secrets injection, health checks — all handled.
+
+---
+
+## Why MicroVMs?
+
+Containers share a kernel. One exploit, one misconfigured process, one rogue dependency can affect every tenant on the host. Firecracker MicroVMs give every workload its own kernel, its own network stack, and its own trust boundary — with cold starts under **20 ms**.
+
+```
+Developer pushes image
+        │
+        ▼
+  heroctl deploy
+        │
+        ▼
+ Nomad schedules task
+        │
+        ▼
+ Compute Agent boots Firecracker MicroVM   ← isolated kernel
+        │                                  ← isolated VXLAN namespace
+        ▼                                  ← secrets via Vault MMDS
+ App is live at your subdomain
+```
+
+---
+
+## Platform features
+
+| Feature | What it means for you |
+|---------|----------------------|
+| ⚡ **< 20 ms cold starts** | Scale-to-zero is actually usable in production |
+| 🔒 **Hardware-isolated VMs** | Separate kernel per tenant — not just cgroups |
+| 🌐 **EVPN/VXLAN networking** | Full L2 tenant isolation across any number of worker nodes |
+| 🔑 **Vault-backed secrets** | Injected at boot via MMDS, never stored in env files or images |
+| 📊 **Built-in observability** | Mimir + Loki + Tempo + Grafana, pre-wired for every deployment |
+| 🛍️ **App Store** | One-click Postgres, Redis, monitoring stacks |
+| 🇩🇪 **Made in Germany** | DSGVO-compliant, data stays in German data centres |
+
+---
+
+## The full config is one file
 
 ```toml
+# hero.toml
 [app]
-name = "my-api"
+name           = "my-api"
+custom_domains = ["api.example.com"]
 
 [deploy]
-cpu         = 1
-memory_mb   = 512
-port        = 3000
-health_path = "/health"
+cpu           = 2
+memory_mb     = 1024
+port          = 3000
+health_path   = "/health"
+min_replicas  = 2
+max_replicas  = 5
+scale_to_zero = false
+
+[env]
+NODE_ENV = "production"
+
+[labels]
+"metrics.scrape" = "true"
+
+[[volumes]]
+name  = "uploads"
+mount = "/var/lib/uploads"
 ```
+
+Secrets stay out of the file — set them with `heroctl secrets set`.
 
 ---
 
 ## Status
 
-Currently in active development — targeting closed beta Q2 2026.
+🔧 **MVP in active development** — closed beta targeting Q2 2026
 
-Built by [Dominik Ludwig](https://github.com/dominikludwig) and [Sascha Jullmann](https://github.com/SaschaJullmann).
+Built by [Dominik Ludwig](https://github.com/dominikludwig1995) and [Sascha Jullmann](https://github.com/SaschaJullmann)
+in Frankfurt, Germany.
 
-[infra-heroes.de](https://infra-heroes.de)
+**→ [infra-heroes.de](https://infra-heroes.de)**
