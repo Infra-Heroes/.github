@@ -29,6 +29,7 @@ Push a Docker image. Run `heroctl deploy`. Get a live HTTPS URL. No Kubernetes. 
 | [hero-driver](https://github.com/Infra-Heroes/hero-driver) | Nomad task driver plugin — bridges scheduler to compute agent |
 | [hero-gateway-agent](https://github.com/Infra-Heroes/hero-gateway-agent) | Jump node agent — configures VXLAN bridges and BGP EVPN routes |
 | [hero-public](https://github.com/Infra-Heroes/hero-public) | Architecture docs, concepts, roadmap, and pitch materials |
+| [hero-app-store](https://github.com/Infra-Heroes/hero-app-store) | One-click managed services (databases, monitoring stack) |
 
 ---
 
@@ -67,7 +68,6 @@ health_path = "/health"
 
 Currently in active development — targeting closed beta Q2 2026.
 
-**Dominik Ludwig** · dominik.ludwig30@gmail.com
-**Sascha Jullmann** · jullmann.sascha@gmail.com
+Built by [Dominik Ludwig](https://github.com/dominikludwig) and [Sascha Jullmann](https://github.com/SaschaJullmann).
 
 [infra-heroes.de](https://infra-heroes.de)
