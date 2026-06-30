@@ -1,4 +1,4 @@
-# InfraHeroes 🦸
+# InfraHeroes UG (haftungsbeschränkt) i.G. 🦸
 
 > **Container in. MicroVM out. HTTPS up.**
 > No Kubernetes. No DevOps team. No vendor lock-in.
@@ -58,6 +58,81 @@ Developer pushes image
 | 📊 **Built-in observability** | Mimir + Loki + Tempo + Grafana, pre-wired for every deployment |
 | 🛍️ **App Store** | One-click Postgres, Redis, monitoring stacks |
 | 🇩🇪 **Made in Germany** | DSGVO-compliant, data stays in German data centres |
+
+---
+
+## heroctl — the full CLI
+
+### Account & projects
+
+```bash
+heroctl signup                                     # create an account
+heroctl login                                      # authenticate
+heroctl orgs                                       # list your organisations
+
+heroctl projects list                              # list projects
+heroctl projects create my-project                 # create a project
+heroctl projects delete my-project                 # delete a project
+```
+
+### Deploy & manage workloads
+
+```bash
+heroctl validate                                   # validate hero.toml before deploying
+heroctl deploy --project my-project                # build & deploy from current directory
+
+heroctl deployments list --project my-project      # list all deployments
+heroctl deployments get my-api --project my-project # inspect a deployment
+heroctl deployments start   my-api --project …     # start a stopped deployment
+heroctl deployments stop    my-api --project …     # stop without deleting
+heroctl deployments restart my-api --project …     # rolling restart
+heroctl deployments update  my-api --cpu 2 --memory 1024 --project … # scale vertically
+heroctl deployments delete  my-api --project …     # remove deployment
+```
+
+### Logs
+
+```bash
+heroctl logs my-api --project my-project           # snapshot of recent logs
+heroctl logs my-api --project my-project -f        # stream live (follow mode)
+```
+
+### Secrets
+
+```bash
+heroctl secrets set    DB_PASSWORD --project …     # set a secret (read from stdin)
+heroctl secrets list   --project my-project        # list secret keys (values hidden)
+heroctl secrets delete DB_PASSWORD --project …     # delete a secret
+```
+
+### Persistent volumes
+
+```bash
+heroctl volumes create my-data --size 20 --project …  # create a 20 GB volume
+heroctl volumes list   --project my-project             # list volumes
+heroctl volumes destroy my-data --project …            # permanently destroy a volume
+```
+
+### Team management
+
+```bash
+heroctl members invite   user@example.com --org my-org  # invite a team member
+heroctl members list     --org my-org                    # list members
+heroctl members set-role <id> admin --org my-org         # promote to admin
+heroctl members remove   <id> --org my-org               # remove a member
+
+heroctl members invitations list   --org my-org          # pending invitations
+heroctl members invitations revoke <id> --org my-org     # cancel an invite
+heroctl accept-invite <token>                            # accept an invitation
+```
+
+### CI/CD tokens
+
+```bash
+heroctl tokens create --org my-org   # create a scoped API token for CI runners
+heroctl tokens list   --org my-org   # list active tokens
+heroctl tokens delete <id> --org my-org
+```
 
 ---
 
